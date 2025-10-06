@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de Mercado</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Calculadora -->
+    <div id="calculadora">
+      <button id="menu">☰ Historial</button>
+      <div id="pantalla"></div>
+      <div id="botones">
+        <button>7</button>
+        <button>8</button>
+        <button>9</button>
+        <button id="borrar">←</button>
+        <button>4</button>
+        <button>5</button>
+        <button>6</button>
+        <button id="sup">SUP</button>
+        <button>1</button>
+        <button>2</button>
+        <button>3</button>
+        <button>+</button>
+        <button id="lista">LISTA</button>
+        <button>0</button>
+        <button>.</button>
+        <button id="igual">=</button>
+      </div>
+    </div>
+
+    <!-- Lista de productos -->
+    <div id="listaProductos" class="oculto">
+      <h2>Lista de productos</h2>
+      <table id="tablaLista">
+        <thead>
+          <tr>
+            <th>Producto</th>
+            <th>Precio</th>
+          </tr>
+        </thead>
+        <tbody id="cuerpoLista"></tbody>
+      </table>
+      <button id="imprimirLista">IMPRIMIR LISTA</button>
+      <button id="volverCalc">VOLVER</button>
+    </div>
+
+    <!-- Historial -->
+    <div id="historial" class="oculto">
+      <h2>Historial</h2>
+      <ul id="listaHistorial"></ul>
+      <button id="volverDesdeHistorial">VOLVER</button>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

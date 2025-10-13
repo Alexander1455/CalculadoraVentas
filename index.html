@@ -1,32 +1,38 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Calculadora de Mercado</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
   <div id="app">
-    <!-- Calculadora -->
+    <!-- CALCULADORA -->
     <div id="calculadora">
-      <div id="pantalla-contenedor">
-        <button id="menu">☰</button>
-        <div id="pantalla"></div>
+      <div id="calc-header">
+        <div class="titulo">Calculadora</div>
+        <button id="menu" title="Historial">☰</button>
       </div>
+
+      <div id="pantalla"></div>
+
       <div id="botones">
         <button>7</button>
         <button>8</button>
         <button>9</button>
         <button id="borrar">←</button>
+
         <button>4</button>
         <button>5</button>
         <button>6</button>
         <button id="sup">SUP</button>
+
         <button>1</button>
         <button>2</button>
         <button>3</button>
         <button>+</button>
+
         <button id="lista">LISTA</button>
         <button>0</button>
         <button>.</button>
@@ -34,30 +40,59 @@
       </div>
     </div>
 
-    <!-- Lista de productos -->
+    <!-- LISTA DE PRODUCTOS -->
     <div id="listaProductos" class="oculto">
       <h2>Lista de productos</h2>
-      <table id="tablaLista">
-        <thead>
-          <tr>
-            <th>Producto</th>
-            <th>Precio</th>
-          </tr>
-        </thead>
-        <tbody id="cuerpoLista"></tbody>
-      </table>
-      <button id="imprimirLista">IMPRIMIR LISTA</button>
-      <button id="volverCalc">VOLVER</button>
+
+      <!-- Nombre de lista/cliente -->
+      <div id="nombreListaCont">
+        <label for="nombreLista"><strong>Nombre de la lista / cliente:</strong></label>
+        <input type="text" id="nombreLista" placeholder="Ej. Cliente José"/>
+      </div>
+
+      <div class="tabla-contenedor">
+        <table id="tablaLista">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th>Precio</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="cuerpoLista"></tbody>
+          <tfoot>
+            <tr id="filaAgregar">
+              <td colspan="3" class="center">
+                <button id="btnAgregarFila" class="btn-agregar">+ Agregar producto</button>
+              </td>
+            </tr>
+            <tr id="filaTotal">
+              <td colspan="2"><strong>TOTAL</strong></td>
+              <td id="totalValor"><strong>S/ 0.00</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- Botonera inferior fija (no se duplica) -->
+      <div class="acciones-lista">
+        <button id="guardarLista" class="btn-guardar">GUARDAR LISTA</button>
+        <button id="imprimirLista" class="btn-imprimir">IMPRIMIR LISTA</button>
+        <button id="volverCalc" class="btn-volver">VOLVER</button>
+      </div>
     </div>
 
-    <!-- Historial -->
+    <!-- HISTORIAL -->
     <div id="historial" class="oculto">
       <h2>Historial</h2>
       <ul id="listaHistorial"></ul>
-      <button id="volverDesdeHistorial">VOLVER</button>
+      <div class="acciones-historial">
+        <button id="volverDesdeHistorial" class="btn-volver">VOLVER</button>
+      </div>
     </div>
   </div>
 
+  <!-- Librería PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="script.js"></script>
 </body>

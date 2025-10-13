@@ -39,7 +39,7 @@ sup.addEventListener("click", () => {
 
 igual.addEventListener("click", () => {
   try {
-    preciosGuardados = operacion.split("+").map(n => parseFloat(n));
+    preciosGuardados = operacion.split("+").map(n => parseFloat(n)).filter(n => !isNaN(n));
     const resultado = preciosGuardados.reduce((a,b) => a+b, 0);
     pantalla.textContent = resultado.toFixed(2);
     operacion = "";
@@ -49,50 +49,113 @@ igual.addEventListener("click", () => {
 });
 
 // --- LISTA ---
+// Ahora también funciona sin haber hecho una operación antes
 listaBtn.addEventListener("click", () => {
-  if (preciosGuardados.length === 0) {
-    alert("Primero realiza una operación con '='");
-    return;
-  }
   document.getElementById("calculadora").classList.add("oculto");
   listaProductosDiv.classList.remove("oculto");
 
-  // Construir tabla editable
   cuerpoLista.innerHTML = "";
-  preciosGuardados.forEach(precio => {
-    const fila = document.createElement("tr");
 
-    const tdNombre = document.createElement("td");
-    const inputNombre = document.createElement("input");
-    inputNombre.placeholder = "Producto";
-    tdNombre.appendChild(inputNombre);
+  // Si ya hay precios (caso normal)
+  if (preciosGuardados.length > 0) {
+    preciosGuardados.forEach(precio => {
+      agregarFila("Producto", precio);
+    });
+  } 
+  // Si no hay sumas, empieza vacío
+  else {
+    agregarFila("", 0);
+  }
 
-    const tdPrecio = document.createElement("td");
-    tdPrecio.textContent = precio.toFixed(2);
-
-    fila.appendChild(tdNombre);
-    fila.appendChild(tdPrecio);
-    cuerpoLista.appendChild(fila);
-  });
+  // Siempre mostrar el total al entrar
+  agregarFilaTotal();
 });
+
+// --- AGREGAR FILA (editable) ---
+function agregarFila(nombre = "", precio = 0) {
+  const fila = document.createElement("tr");
+
+  const tdNombre = document.createElement("td");
+  const inputNombre = document.createElement("input");
+  inputNombre.placeholder = "Producto";
+  inputNombre.value = nombre;
+  tdNombre.appendChild(inputNombre);
+
+  const tdPrecio = document.createElement("td");
+  const inputPrecio = document.createElement("input");
+  inputPrecio.type = "number";
+  inputPrecio.min = "0";
+  inputPrecio.step = "0.01";
+  inputPrecio.value = precio ? precio.toFixed(2) : "";
+  inputPrecio.placeholder = "0.00";
+  tdPrecio.appendChild(inputPrecio);
+
+  // Cuando cambia el precio, recalcular total
+  inputPrecio.addEventListener("input", calcularTotalLista);
+
+  fila.appendChild(tdNombre);
+  fila.appendChild(tdPrecio);
+  cuerpoLista.appendChild(fila);
+}
+
+// --- FILA DE TOTAL ---
+function agregarFilaTotal() {
+  const fila = document.createElement("tr");
+  fila.id = "filaTotal";
+
+  const tdLabel = document.createElement("td");
+  tdLabel.textContent = "TOTAL";
+
+  const tdValor = document.createElement("td");
+  tdValor.id = "totalValor";
+  tdValor.textContent = "S/ 0.00";
+
+  fila.appendChild(tdLabel);
+  fila.appendChild(tdValor);
+  cuerpoLista.appendChild(fila);
+
+  calcularTotalLista();
+}
+
+// --- CALCULAR TOTAL EN LISTA ---
+function calcularTotalLista() {
+  const precios = [...cuerpoLista.querySelectorAll("tr input[type='number']")]
+    .map(input => parseFloat(input.value))
+    .filter(val => !isNaN(val));
+
+  const total = precios.reduce((a,b) => a+b, 0);
+  const totalCell = document.getElementById("totalValor");
+  if (totalCell) totalCell.textContent = `S/ ${total.toFixed(2)}`;
+}
 
 // --- VOLVER ---
 volverCalc.addEventListener("click", () => {
   guardarListaEnHistorial();
+
+  preciosGuardados = [];
+  cuerpoLista.innerHTML = "";
+  pantalla.textContent = "";
+  operacion = "";
+
   listaProductosDiv.classList.add("oculto");
   document.getElementById("calculadora").classList.remove("oculto");
 });
 
 // --- GUARDAR LISTA EN HISTORIAL ---
 function guardarListaEnHistorial() {
+  const filas = [...cuerpoLista.querySelectorAll("tr")].filter(f => f.id !== "filaTotal");
+  if (filas.length === 0) return;
+
   const items = [];
   let total = 0;
 
-  [...cuerpoLista.querySelectorAll("tr")].forEach(fila => {
-    const nombre = fila.querySelector("input").value || "(sin nombre)";
-    const precio = parseFloat(fila.cells[1].textContent);
-    items.push({ nombre, precio });
-    total += precio;
+  filas.forEach(fila => {
+    const nombre = fila.querySelector("input[type='text']").value || "(sin nombre)";
+    const precio = parseFloat(fila.querySelector("input[type='number']").value);
+    if (!isNaN(precio)) {
+      items.push({ nombre, precio });
+      total += precio;
+    }
   });
 
   if (items.length > 0) {
@@ -110,9 +173,7 @@ function mostrarHistorial() {
 
     const btnVer = document.createElement("button");
     btnVer.textContent = "VER";
-    btnVer.addEventListener("click", () => {
-      abrirListaDesdeHistorial(index);
-    });
+    btnVer.addEventListener("click", () => abrirListaDesdeHistorial(index));
 
     li.appendChild(btnVer);
     listaHistorial.appendChild(li);
@@ -122,27 +183,16 @@ function mostrarHistorial() {
 // --- ABRIR LISTA DESDE HISTORIAL ---
 function abrirListaDesdeHistorial(index) {
   const registro = historialDatos[index];
-
   document.getElementById("calculadora").classList.add("oculto");
   historialDiv.classList.add("oculto");
   listaProductosDiv.classList.remove("oculto");
 
   cuerpoLista.innerHTML = "";
   registro.items.forEach(item => {
-    const fila = document.createElement("tr");
-
-    const tdNombre = document.createElement("td");
-    const inputNombre = document.createElement("input");
-    inputNombre.value = item.nombre;
-    tdNombre.appendChild(inputNombre);
-
-    const tdPrecio = document.createElement("td");
-    tdPrecio.textContent = item.precio.toFixed(2);
-
-    fila.appendChild(tdNombre);
-    fila.appendChild(tdPrecio);
-    cuerpoLista.appendChild(fila);
+    agregarFila(item.nombre, item.precio);
   });
+
+  agregarFilaTotal();
 }
 
 // --- HISTORIAL BOTÓN ☰ ---
@@ -169,14 +219,19 @@ imprimirLista.addEventListener("click", () => {
   let total = 0;
 
   [...cuerpoLista.querySelectorAll("tr")].forEach(fila => {
-    const nombre = fila.querySelector("input").value || "(sin nombre)";
-    const precio = parseFloat(fila.cells[1].textContent);
-    total += precio;
-    doc.text(`${nombre} - S/ ${precio.toFixed(2)}`, 10, y);
-    y += 10;
+    const nombreInput = fila.querySelector("input[type='text']");
+    const precioInput = fila.querySelector("input[type='number']");
+    if (!nombreInput || !precioInput) return;
+
+    const nombre = nombreInput.value || "(sin nombre)";
+    const precio = parseFloat(precioInput.value);
+    if (!isNaN(precio)) {
+      total += precio;
+      doc.text(`${nombre} - S/ ${precio.toFixed(2)}`, 10, y);
+      y += 10;
+    }
   });
 
   doc.text(`TOTAL: S/ ${total.toFixed(2)}`, 10, y + 10);
-
   doc.save("lista.pdf");
 });

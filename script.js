@@ -49,29 +49,27 @@ igual.addEventListener("click", () => {
 });
 
 // --- LISTA ---
-// Ahora también funciona sin haber hecho una operación antes
 listaBtn.addEventListener("click", () => {
   document.getElementById("calculadora").classList.add("oculto");
   listaProductosDiv.classList.remove("oculto");
-
   cuerpoLista.innerHTML = "";
 
-  // Si ya hay precios (caso normal)
+  // Si hay precios guardados, mostrarlos
   if (preciosGuardados.length > 0) {
     preciosGuardados.forEach(precio => {
       agregarFila("Producto", precio);
     });
   } 
-  // Si no hay sumas, empieza vacío
+  // Si no hay sumas, lista vacía
   else {
     agregarFila("", 0);
   }
 
-  // Siempre mostrar el total al entrar
+  agregarBotonAgregar();
   agregarFilaTotal();
 });
 
-// --- AGREGAR FILA (editable) ---
+// --- AGREGAR FILA ---
 function agregarFila(nombre = "", precio = 0) {
   const fila = document.createElement("tr");
 
@@ -90,25 +88,80 @@ function agregarFila(nombre = "", precio = 0) {
   inputPrecio.placeholder = "0.00";
   tdPrecio.appendChild(inputPrecio);
 
-  // Cuando cambia el precio, recalcular total
+  // Nueva columna de eliminar
+  const tdEliminar = document.createElement("td");
+  const btnEliminar = document.createElement("button");
+  btnEliminar.textContent = "❌";
+  btnEliminar.title = "Eliminar producto";
+  btnEliminar.style.background = "transparent";
+  btnEliminar.style.border = "none";
+  btnEliminar.style.cursor = "pointer";
+  btnEliminar.style.fontSize = "16px";
+  btnEliminar.addEventListener("click", () => {
+    fila.remove();
+    calcularTotalLista();
+  });
+  tdEliminar.appendChild(btnEliminar);
+
+  // Evento de recálculo al cambiar precio
   inputPrecio.addEventListener("input", calcularTotalLista);
 
   fila.appendChild(tdNombre);
   fila.appendChild(tdPrecio);
+  fila.appendChild(tdEliminar);
+
+  const filaAgregar = document.getElementById("filaAgregar");
+  if (filaAgregar) {
+    cuerpoLista.insertBefore(fila, filaAgregar);
+  } else {
+    cuerpoLista.appendChild(fila);
+  }
+
+  calcularTotalLista();
+}
+
+// --- BOTÓN "AGREGAR PRODUCTO" ---
+function agregarBotonAgregar() {
+  if (document.getElementById("filaAgregar")) return;
+
+  const fila = document.createElement("tr");
+  fila.id = "filaAgregar";
+
+  const tdBoton = document.createElement("td");
+  tdBoton.colSpan = 3;
+  tdBoton.style.textAlign = "center";
+
+  const btnAgregar = document.createElement("button");
+  btnAgregar.textContent = "+ Agregar producto";
+  btnAgregar.style.background = "#4CAF50";
+  btnAgregar.style.color = "white";
+  btnAgregar.style.border = "none";
+  btnAgregar.style.borderRadius = "8px";
+  btnAgregar.style.padding = "8px 12px";
+  btnAgregar.style.cursor = "pointer";
+  btnAgregar.style.fontWeight = "bold";
+  btnAgregar.style.marginTop = "5px";
+  btnAgregar.addEventListener("click", () => agregarFila("", 0));
+
+  tdBoton.appendChild(btnAgregar);
+  fila.appendChild(tdBoton);
   cuerpoLista.appendChild(fila);
 }
 
-// --- FILA DE TOTAL ---
+// --- FILA TOTAL ---
 function agregarFilaTotal() {
   const fila = document.createElement("tr");
   fila.id = "filaTotal";
 
   const tdLabel = document.createElement("td");
   tdLabel.textContent = "TOTAL";
+  tdLabel.colSpan = 2;
+  tdLabel.style.fontWeight = "bold";
 
   const tdValor = document.createElement("td");
   tdValor.id = "totalValor";
   tdValor.textContent = "S/ 0.00";
+  tdValor.style.fontWeight = "bold";
 
   fila.appendChild(tdLabel);
   fila.appendChild(tdValor);
@@ -117,7 +170,7 @@ function agregarFilaTotal() {
   calcularTotalLista();
 }
 
-// --- CALCULAR TOTAL EN LISTA ---
+// --- CALCULAR TOTAL ---
 function calcularTotalLista() {
   const precios = [...cuerpoLista.querySelectorAll("tr input[type='number']")]
     .map(input => parseFloat(input.value))
@@ -131,19 +184,19 @@ function calcularTotalLista() {
 // --- VOLVER ---
 volverCalc.addEventListener("click", () => {
   guardarListaEnHistorial();
-
   preciosGuardados = [];
   cuerpoLista.innerHTML = "";
   pantalla.textContent = "";
   operacion = "";
-
   listaProductosDiv.classList.add("oculto");
   document.getElementById("calculadora").classList.remove("oculto");
 });
 
 // --- GUARDAR LISTA EN HISTORIAL ---
 function guardarListaEnHistorial() {
-  const filas = [...cuerpoLista.querySelectorAll("tr")].filter(f => f.id !== "filaTotal");
+  const filas = [...cuerpoLista.querySelectorAll("tr")].filter(f => 
+    f.id !== "filaTotal" && f.id !== "filaAgregar"
+  );
   if (filas.length === 0) return;
 
   const items = [];
@@ -188,10 +241,8 @@ function abrirListaDesdeHistorial(index) {
   listaProductosDiv.classList.remove("oculto");
 
   cuerpoLista.innerHTML = "";
-  registro.items.forEach(item => {
-    agregarFila(item.nombre, item.precio);
-  });
-
+  registro.items.forEach(item => agregarFila(item.nombre, item.precio));
+  agregarBotonAgregar();
   agregarFilaTotal();
 }
 
@@ -212,7 +263,6 @@ volverDesdeHistorial.addEventListener("click", () => {
 imprimirLista.addEventListener("click", () => {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
-
   doc.text("Lista de productos", 10, 10);
 
   let y = 20;

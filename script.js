@@ -65,7 +65,28 @@ document.addEventListener("DOMContentLoaded", () => {
     abrirListaCon(preciosGuardados);
   });
 
-  function abrirListaCon(precios = []) {
+  async function abrirListaCon(precios = []) {
+    // 🔧 Confirmar si hay lista anterior
+    if (preciosGuardados.length > 0 && precios.length === 0) {
+      if (typeof Swal === "undefined") {
+        const confirmar = confirm("¿Deseas iniciar una nueva lista? Esto eliminará la lista anterior.");
+        if (!confirmar) return;
+      } else {
+        const resultado = await Swal.fire({
+          title: "¿Iniciar nueva lista?",
+          text: "Esto eliminará la lista anterior.",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#4CAF50",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Sí, nueva lista",
+          cancelButtonText: "Cancelar"
+        });
+        if (!resultado.isConfirmed) return;
+      }
+      preciosGuardados = [];
+    }
+
     document.getElementById("calculadora").classList.add("oculto");
     historialDiv.classList.add("oculto");
     listaProductosDiv.classList.remove("oculto");
@@ -75,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
     nombreListaInput.value = "";
 
     if (precios.length > 0) {
-      precios.forEach(p => agregarFila("Producto", p));
+      precios.forEach(p => agregarFila("", p)); // ← sin texto, solo placeholder
     } else {
       agregarFila("", 0);
     }
@@ -91,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tdNombre = document.createElement("td");
     const inNombre = document.createElement("input");
     inNombre.type = "text";
-    inNombre.placeholder = "Producto";
+    inNombre.placeholder = "Producto"; // ← placeholder visible pero no texto
     inNombre.value = nombre;
     tdNombre.appendChild(inNombre);
 
@@ -137,7 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
   guardarListaBtn.addEventListener("click", () => {
     const filas = obtenerFilasValidas();
     if (filas.items.length === 0) {
-      alert("Agrega productos válidos antes de guardar.");
+      mostrarAlerta("Atención", "Agrega productos válidos antes de guardar.", "info");
       return;
     }
 
@@ -155,12 +176,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     renderHistorial();
-    alert("✅ Lista guardada correctamente");
+    mostrarAlerta("✅ Guardado", "Lista guardada correctamente.", "success");
+    preciosGuardados = []; // limpiar datos previos
   });
 
   imprimirListaBtn.addEventListener("click", () => {
     const filas = obtenerFilasValidas();
-    if (filas.items.length === 0) return alert("No hay productos para imprimir");
+    if (filas.items.length === 0) return mostrarAlerta("Sin productos", "Agrega productos antes de imprimir", "info");
 
     const nombre = (nombreListaInput.value || "Lista sin nombre").trim();
     const { jsPDF } = window.jspdf;
@@ -223,6 +245,7 @@ document.addEventListener("DOMContentLoaded", () => {
     recalcularTotal();
   }
 
+  // ===== UTIL =====
   function obtenerFilasValidas() {
     const filas = [...cuerpoLista.querySelectorAll("tbody tr")];
     const items = [];
@@ -243,9 +266,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function parsearOperacion(opStr) {
     if (!opStr) return [];
-    return opStr
-      .split("+")
-      .map(x => parseFloat(x))
-      .filter(x => !isNaN(x));
+    return opStr.split("+").map(x => parseFloat(x)).filter(x => !isNaN(x));
+  }
+
+  function mostrarAlerta(titulo, texto, icono = "info") {
+    if (typeof Swal === "undefined") {
+      alert(`${titulo}\n${texto}`);
+    } else {
+      Swal.fire(titulo, texto, icono);
+    }
   }
 });

@@ -48,15 +48,20 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   igual.addEventListener("click", () => {
-    try {
-      preciosGuardados = parsearOperacion(operacion);
-      const resultado = preciosGuardados.reduce((a, b) => a + b, 0);
-      pantalla.textContent = resultado.toFixed(2);
-      operacion = "";
-    } catch {
-      pantalla.textContent = "Error";
+  try {
+    if (!operacion.trim()) {
+      return;
     }
-  });
+
+    preciosGuardados = parsearOperacion(operacion);
+    const resultado = preciosGuardados.reduce((a, b) => a + b, 0);
+    pantalla.textContent = resultado.toFixed(2);
+
+    operacion = "";
+  } catch {
+    pantalla.textContent = "Error";
+  }
+});
 
   // ===== ABRIR LISTA =====
   listaBtn.addEventListener("click", () => {

@@ -9,7 +9,7 @@
 <body>
   <div id="app">
     <!-- CALCULADORA -->
-    <div id="calculadora">
+    <section id="calculadora">
       <div id="calc-header">
         <div class="titulo">Calculadora</div>
         <button id="menu" title="Historial">☰</button>
@@ -38,13 +38,12 @@
         <button>.</button>
         <button id="igual">=</button>
       </div>
-    </div>
+    </section>
 
     <!-- LISTA DE PRODUCTOS -->
-    <div id="listaProductos" class="oculto">
+    <section id="listaProductos" class="oculto">
       <h2>Lista de productos</h2>
 
-      <!-- Nombre de lista/cliente -->
       <div id="nombreListaCont">
         <label for="nombreLista"><strong>Nombre de la lista / cliente:</strong></label>
         <input type="text" id="nombreLista" placeholder="Ej. Cliente José"/>
@@ -59,13 +58,14 @@
               <th></th>
             </tr>
           </thead>
-          <tbody id="cuerpoLista"></tbody>
-          <tfoot>
+          <tbody id="cuerpoLista">
             <tr id="filaAgregar">
               <td colspan="3" class="center">
                 <button id="btnAgregarFila" class="btn-agregar">+ Agregar producto</button>
               </td>
             </tr>
+          </tbody>
+          <tfoot>
             <tr id="filaTotal">
               <td colspan="2"><strong>TOTAL</strong></td>
               <td id="totalValor"><strong>S/ 0.00</strong></td>
@@ -74,25 +74,23 @@
         </table>
       </div>
 
-      <!-- Botonera inferior fija (no se duplica) -->
       <div class="acciones-lista">
         <button id="guardarLista" class="btn-guardar">GUARDAR LISTA</button>
         <button id="imprimirLista" class="btn-imprimir">IMPRIMIR LISTA</button>
         <button id="volverCalc" class="btn-volver">VOLVER</button>
       </div>
-    </div>
+    </section>
 
     <!-- HISTORIAL -->
-    <div id="historial" class="oculto">
+    <section id="historial" class="oculto">
       <h2>Historial</h2>
       <ul id="listaHistorial"></ul>
       <div class="acciones-historial">
         <button id="volverDesdeHistorial" class="btn-volver">VOLVER</button>
       </div>
-    </div>
+    </section>
   </div>
 
-  <!-- Librería PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="script.js"></script>
 </body>

@@ -1,8 +1,8 @@
 :root{
-  --bg: #FFF8E1;       /* fondo cálido */
-  --primary: #4CAF50;  /* verde hoja */
+  --bg: #FFF8E1;
+  --primary: #4CAF50;
   --primary-dark:#45A049;
-  --brown: #8D6E63;    /* acento cálido */
+  --brown: #8D6E63;
   --brown-dark:#6D4C41;
   --text:#333;
   --card:#fff;
@@ -24,7 +24,7 @@ body{
 }
 
 #app{
-  width:min(96vw, 420px);
+  width:min(96vw, 440px);
   background:var(--card);
   border-radius:18px;
   box-shadow:0 8px 24px rgba(0,0,0,.18);
@@ -56,9 +56,8 @@ body{
   align-items:center;
   justify-content:center;
   box-shadow:0 3px 6px rgba(0,0,0,.2);
-  transition:transform .2s ease, background .2s ease;
 }
-#menu:hover{ background:var(--primary-dark); transform:scale(1.05); }
+#menu:hover{ background:var(--primary-dark); }
 
 #pantalla{
   background:var(--muted);
@@ -87,15 +86,14 @@ body{
   background:#fff;
   cursor:pointer;
   box-shadow:0 4px var(--brown), 0 6px 10px rgba(0,0,0,.1);
-  transition:transform .15s ease, background .15s ease, box-shadow .15s ease;
 }
-#botones button:hover{ background:#f1f1f1; }
 #botones button:active{ transform:translateY(3px); box-shadow:0 2px var(--brown-dark); }
 
 /* ===== LISTA ===== */
 #listaProductos h2,
 #historial h2{
   margin:4px 0 10px;
+  text-align:center;
 }
 
 #nombreListaCont{
@@ -127,13 +125,18 @@ thead th{
   background:var(--primary);
   color:#fff;
   padding:8px;
-  border-top-left-radius:8px;
-  border-top-right-radius:8px;
   text-align:left;
 }
 td, th{
   border:1px solid #ddd;
   padding:8px;
+}
+
+#cuerpoLista tr{
+  transition: background .2s ease;
+}
+#cuerpoLista tr:hover{
+  background:#f9f9f9;
 }
 
 #cuerpoLista input[type="text"],
@@ -170,7 +173,6 @@ td, th{
   background:#fafafa;
 }
 
-/* Botonera fija de la lista (nada duplicado) */
 .acciones-lista{
   display:flex;
   gap:8px;

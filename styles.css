@@ -279,3 +279,91 @@ input[type="number"] {
 #historial li button:hover {
   background-color: #45a049;
 }
+/* ======== MODO RESPONSIVE (4 columnas siempre) ======== */
+@media (max-width: 600px) {
+  body {
+    background-color: #fdf6e3;
+    padding: 10px;
+  }
+
+  #app,
+  #listaProductos,
+  #historial {
+    width: 100%;
+    max-width: 100%;
+    padding: 15px;
+    border-radius: 14px;
+  }
+
+  /* --- Pantalla de la calculadora --- */
+  #pantalla {
+    font-size: 1.4em;
+    height: 55px;
+    padding: 0 10px;
+  }
+
+  /* --- Botones calculadora --- */
+  #botones {
+    grid-template-columns: repeat(4, 1fr); /* siempre 4 columnas */
+    gap: 8px;
+  }
+
+  #botones button {
+    padding: 16px;
+    font-size: 1.1em;
+    border-radius: 10px;
+  }
+
+  /* --- Tabla de lista --- */
+  table {
+    font-size: 0.95em;
+  }
+
+  input[type="text"],
+  input[type="number"] {
+    font-size: 0.9em;
+    padding: 6px;
+  }
+
+  .btn-eliminar {
+    font-size: 1.2em;
+  }
+
+  /* --- Botón agregar producto --- */
+  .btn-agregar {
+    width: 100%;
+    padding: 10px;
+    font-size: 1em;
+  }
+
+  /* --- Botones de acción (Guardar, Imprimir, Volver) --- */
+  .acciones-lista {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btn-guardar,
+  .btn-imprimir,
+  .btn-volver {
+    width: 100%;
+    font-size: 1em;
+    padding: 12px;
+  }
+
+  /* --- Historial --- */
+  #historial li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+
+  #historial li button {
+    align-self: flex-end;
+    font-size: 0.9em;
+  }
+
+  /* --- Ajuste general --- */
+  #app {
+    margin-bottom: 40px;
+  }
+}

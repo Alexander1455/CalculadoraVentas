@@ -48,20 +48,16 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   igual.addEventListener("click", () => {
-  try {
-    if (!operacion.trim()) {
-      return;
+    try {
+      if (!operacion.trim()) return;
+      preciosGuardados = parsearOperacion(operacion);
+      const resultado = preciosGuardados.reduce((a, b) => a + b, 0);
+      pantalla.textContent = resultado.toFixed(2);
+      operacion = "";
+    } catch {
+      pantalla.textContent = "Error";
     }
-
-    preciosGuardados = parsearOperacion(operacion);
-    const resultado = preciosGuardados.reduce((a, b) => a + b, 0);
-    pantalla.textContent = resultado.toFixed(2);
-
-    operacion = "";
-  } catch {
-    pantalla.textContent = "Error";
-  }
-});
+  });
 
   // ===== ABRIR LISTA =====
   listaBtn.addEventListener("click", () => {
@@ -71,7 +67,6 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   async function abrirListaCon(precios = []) {
-    // 🔧 Confirmar si hay lista anterior
     if (preciosGuardados.length > 0 && precios.length === 0) {
       if (typeof Swal === "undefined") {
         const confirmar = confirm("¿Deseas iniciar una nueva lista? Esto eliminará la lista anterior.");
@@ -101,14 +96,14 @@ document.addEventListener("DOMContentLoaded", () => {
     nombreListaInput.value = "";
 
     if (precios.length > 0) {
-      precios.forEach(p => agregarFila("", p)); // ← sin texto, solo placeholder
+      precios.forEach(p => agregarFila("", p));
     } else {
       agregarFila("", 0);
     }
     recalcularTotal();
   }
 
-  // ===== FILAS =====
+  // ===== AGREGAR FILA =====
   btnAgregarFila.addEventListener("click", () => agregarFila("", 0));
 
   function agregarFila(nombre = "", precio = 0) {
@@ -117,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const tdNombre = document.createElement("td");
     const inNombre = document.createElement("input");
     inNombre.type = "text";
-    inNombre.placeholder = "Producto"; // ← placeholder visible pero no texto
+    inNombre.placeholder = "Producto";
     inNombre.value = nombre;
     tdNombre.appendChild(inNombre);
 
@@ -145,8 +140,8 @@ document.addEventListener("DOMContentLoaded", () => {
     tr.appendChild(tdPrecio);
     tr.appendChild(tdEliminar);
 
-    const filaAgregar = document.getElementById("filaAgregar");
-    cuerpoLista.insertBefore(tr, filaAgregar);
+    // ✅ Insertar correctamente dentro del tbody
+    cuerpoLista.appendChild(tr);
     recalcularTotal();
   }
 
@@ -182,12 +177,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     renderHistorial();
     mostrarAlerta("✅ Guardado", "Lista guardada correctamente.", "success");
-    preciosGuardados = []; // limpiar datos previos
+    preciosGuardados = [];
   });
 
   imprimirListaBtn.addEventListener("click", () => {
     const filas = obtenerFilasValidas();
-    if (filas.items.length === 0) return mostrarAlerta("Sin productos", "Agrega productos antes de imprimir", "info");
+    if (filas.items.length === 0)
+      return mostrarAlerta("Sin productos", "Agrega productos antes de imprimir", "info");
 
     const nombre = (nombreListaInput.value || "Lista sin nombre").trim();
     const { jsPDF } = window.jspdf;
@@ -252,7 +248,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ===== UTIL =====
   function obtenerFilasValidas() {
-    const filas = [...cuerpoLista.querySelectorAll("tbody tr")];
+    const filas = [...cuerpoLista.querySelectorAll("tr")];
     const items = [];
     let total = 0;
     filas.forEach(tr => {

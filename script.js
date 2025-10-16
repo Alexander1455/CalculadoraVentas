@@ -44,7 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-    function obtenerTerminoActual() {
+  function obtenerTerminoActual() {
     const ultimoSeparador = operacion.lastIndexOf("+");
     const termino = ultimoSeparador === -1 ? operacion : operacion.slice(ultimoSeparador + 1);
     return termino.trim();
@@ -54,11 +54,25 @@ document.addEventListener("DOMContentLoaded", () => {
     return obtenerTerminoActual().includes(".");
   }
 
+  function ultimoCaracter() {
+    return operacion.length > 0 ? operacion[operacion.length - 1] : "";
+  }
+
+  function terminaConSigno() {
+    return ultimoCaracter() === "+";
+  }
+
+  function terminaConPunto() {
+    return ultimoCaracter() === ".";
+  }
+
   // ===== CALCULADORA =====
   botones.forEach(boton => {
     boton.addEventListener("click", () => {
       const valor = boton.textContent;
       if (["←", "SUP", "=", "LISTA"].includes(valor)) return;
+      if (valor === "." && (terminoActualTienePunto() || terminaConPunto())) return;
+      if (valor === "+" && (operacion.length === 0 || terminaConSigno())) return;
       operacion += valor;
       actualizarPantalla(operacion);
     });

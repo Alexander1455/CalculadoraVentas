@@ -219,6 +219,18 @@ input[type="number"] {
   transition: all 0.15s;
 }
 
+.acciones-historial {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.acciones-historial button {
+  flex: 1 1 45%;
+  min-width: 140px;
+}
+
 .btn-guardar {
   background-color: #4caf50;
   box-shadow: 0 4px 0 #3e8e41;
@@ -241,6 +253,28 @@ input[type="number"] {
 }
 .btn-volver:hover {
   background-color: #4a322a;
+}
+
+.btn-secundario {
+  background-color: #1976d2;
+  border: none;
+  padding: 10px 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  color: white;
+  font-size: 0.95em;
+  transition: all 0.15s;
+  box-shadow: 0 4px 0 #125da4;
+}
+
+.btn-secundario:hover {
+  background-color: #1565c0;
+}
+
+.btn-secundario:active {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 #0d3c73;
 }
 
 /* ===================== HISTORIAL ===================== */
@@ -278,6 +312,10 @@ input[type="number"] {
 
 #historial li button:hover {
   background-color: #45a049;
+}
+
+#historial li.historial-vacio {
+  justify-content: center;
 }
 /* ======== MODO RESPONSIVE (4 columnas siempre) ======== */
 @media (max-width: 600px) {
@@ -348,6 +386,14 @@ input[type="number"] {
     width: 100%;
     font-size: 1em;
     padding: 12px;
+  }
+
+  .acciones-historial {
+    flex-direction: column;
+  }
+
+  .acciones-historial button {
+    width: 100%;
   }
 
   /* --- Historial --- */

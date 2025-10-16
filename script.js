@@ -21,11 +21,21 @@ document.addEventListener("DOMContentLoaded", () => {
   const listaHistorial = document.getElementById("listaHistorial");
   const menu = document.getElementById("menu");
   const volverDesdeHistorialBtn = document.getElementById("volverDesdeHistorial");
+  const exportarHistorialBtn = document.getElementById("exportarHistorial");
+  const importarHistorialBtn = document.getElementById("importarHistorial");
+  const archivoHistorialInput = document.getElementById("archivoHistorial");
 
   let operacion = "";
   let preciosGuardados = [];
   let historialDatos = [];
   let listaActualIndex = null;
+  const STORAGE_KEY = "calculadoraVentas.historial";
+  const DB_NAME = "calculadoraVentas.db";
+  const DB_VERSION = 1;
+  const DB_STORE = "historial";
+  let dbPromise = null;
+
+  inicializarHistorial();
 
   // ===== CALCULADORA =====
   botones.forEach(boton => {
@@ -122,7 +132,7 @@ document.addEventListener("DOMContentLoaded", () => {
     inPrecio.placeholder = "0.00";
     inPrecio.step = "0.01";
     inPrecio.min = "0";
-    inPrecio.value = precio ? precio.toFixed(2) : "";
+    inPrecio.value = Number.isFinite(precio) ? precio.toFixed(2) : "";
     inPrecio.addEventListener("input", recalcularTotal);
     tdPrecio.appendChild(inPrecio);
 
@@ -176,6 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     renderHistorial();
+    sincronizarHistorialPersistido();
     mostrarAlerta("✅ Guardado", "Lista guardada correctamente.", "success");
     preciosGuardados = [];
   });
@@ -219,8 +230,70 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("calculadora").classList.remove("oculto");
   });
 
+  exportarHistorialBtn.addEventListener("click", () => {
+    if (historialDatos.length === 0) {
+      mostrarAlerta("Sin historial", "No hay listas guardadas para exportar.", "info");
+      return;
+    }
+    descargarHistorialComoArchivo();
+  });
+
+  importarHistorialBtn.addEventListener("click", () => {
+    if (!archivoHistorialInput) return;
+    archivoHistorialInput.click();
+  });
+
+  archivoHistorialInput?.addEventListener("change", async event => {
+    const archivo = event.target.files?.[0];
+    if (!archivo) return;
+
+    try {
+      const contenido = await archivo.text();
+      const json = JSON.parse(contenido);
+      const datosCrudos = Array.isArray(json?.historial) ? json.historial : json;
+      const historialImportado = normalizarHistorial(datosCrudos);
+
+      if (!historialImportado || historialImportado.length === 0) {
+        mostrarAlerta("Archivo sin listas", "El archivo seleccionado no contiene listas válidas.", "info");
+        return;
+      }
+
+      let modo = "replace";
+      if (historialDatos.length > 0) {
+        modo = await preguntarModoImportacion();
+        if (!modo) {
+          mostrarAlerta("Importación cancelada", "Se mantuvo el historial actual.", "info");
+          return;
+        }
+      }
+
+      if (modo === "replace" || historialDatos.length === 0) {
+        historialDatos = historialImportado;
+      } else {
+        historialDatos = fusionarHistoriales(historialDatos, historialImportado);
+      }
+
+      renderHistorial();
+      sincronizarHistorialPersistido();
+      mostrarAlerta("Historial importado", "Las listas se cargaron correctamente.", "success");
+    } catch (error) {
+      console.error("No se pudo importar el historial", error);
+      mostrarAlerta("Error", "No se pudo importar el archivo seleccionado.", "error");
+    } finally {
+      event.target.value = "";
+    }
+  });
+
   function renderHistorial() {
     listaHistorial.innerHTML = "";
+    if (historialDatos.length === 0) {
+      const li = document.createElement("li");
+      li.classList.add("historial-vacio");
+      li.textContent = "No hay listas guardadas";
+      listaHistorial.appendChild(li);
+      return;
+    }
+
     historialDatos.forEach((reg, idx) => {
       const li = document.createElement("li");
       li.innerHTML = `<div><strong>${reg.nombre}</strong><br/>Total: S/ ${reg.total.toFixed(2)}</div>`;
@@ -267,7 +340,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function parsearOperacion(opStr) {
     if (!opStr) return [];
-    return opStr.split("+").map(x => parseFloat(x)).filter(x => !isNaN(x));
+    return opStr
+      .split("+")
+      .map(x => parseFloat(x.trim()))
+      .filter(x => !isNaN(x));
   }
 
   function mostrarAlerta(titulo, texto, icono = "info") {
@@ -277,4 +353,220 @@ document.addEventListener("DOMContentLoaded", () => {
       Swal.fire(titulo, texto, icono);
     }
   }
+
+  function cargarHistorialDesdeStorage() {
+    if (typeof localStorage === "undefined") return null;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      return normalizarHistorial(JSON.parse(raw));
+    } catch (error) {
+      console.warn("No se pudo cargar el historial desde el almacenamiento local", error);
+      return null;
+    }
+  }
+
+  function guardarHistorialEnStorage() {
+    if (typeof localStorage === "undefined") return;
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(historialDatos));
+    } catch (error) {
+      console.warn("No se pudo guardar el historial en el almacenamiento local", error);
+    }
+  }
+
+  function normalizarRegistro(registro) {
+    const nombre = typeof registro?.nombre === "string" && registro.nombre.trim() ? registro.nombre.trim() : "Sin nombre";
+    const items = Array.isArray(registro?.items)
+      ? registro.items
+          .map(item => {
+            const itemNombre = typeof item?.nombre === "string" && item.nombre.trim() ? item.nombre.trim() : "(sin nombre)";
+            const precio = Number(item?.precio);
+            return Number.isFinite(precio) ? { nombre: itemNombre, precio } : null;
+          })
+          .filter(Boolean)
+      : [];
+    const total = items.reduce((acum, item) => acum + item.precio, 0);
+
+    return { nombre, items, total };
+  }
+
+  function normalizarHistorial(raw) {
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map(registro => normalizarRegistro(registro))
+      .filter(registro => registro.items.length > 0);
+  }
+
+  function fusionarHistoriales(actual, nuevos) {
+    const mapa = new Map();
+    [...actual, ...nuevos].forEach(registro => {
+      const clave = generarClaveRegistro(registro);
+      if (!mapa.has(clave)) {
+        mapa.set(clave, registro);
+      }
+    });
+    return Array.from(mapa.values());
+  }
+
+  function generarClaveRegistro(registro) {
+    const itemsClave = [...registro.items]
+      .map(item => `${item.nombre}|${item.precio}`)
+      .sort()
+      .join(";");
+    return `${registro.nombre}|${registro.total}|${itemsClave}`;
+  }
+
+  async function inicializarHistorial() {
+    const desdeLocal = cargarHistorialDesdeStorage();
+    if (desdeLocal) {
+      historialDatos = desdeLocal;
+    } else {
+      const desdeIndexedDB = await cargarHistorialDesdeIndexedDB();
+      if (desdeIndexedDB && desdeIndexedDB.length > 0) {
+        historialDatos = desdeIndexedDB;
+        guardarHistorialEnStorage();
+      }
+    }
+    renderHistorial();
+    solicitarAlmacenamientoPersistente();
+  }
+
+  function sincronizarHistorialPersistido() {
+    guardarHistorialEnStorage();
+    guardarHistorialEnIndexedDB();
+  }
+
+  function obtenerDB() {
+    if (dbPromise) return dbPromise;
+    if (typeof indexedDB === "undefined") {
+      dbPromise = Promise.reject(new Error("indexedDB no disponible"));
+      return dbPromise;
+    }
+
+    dbPromise = new Promise((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION);
+      request.onupgradeneeded = event => {
+        const db = event.target.result;
+        if (!db.objectStoreNames.contains(DB_STORE)) {
+          db.createObjectStore(DB_STORE);
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("Error al abrir la base de datos"));
+    });
+
+    return dbPromise;
+  }
+
+  async function cargarHistorialDesdeIndexedDB() {
+    if (typeof indexedDB === "undefined") return null;
+    try {
+      const db = await obtenerDB();
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction(DB_STORE, "readonly");
+        const store = tx.objectStore(DB_STORE);
+        const request = store.get("datos");
+        request.onsuccess = () => {
+          const resultado = normalizarHistorial(request.result);
+          resolve(resultado);
+        };
+        request.onerror = () => reject(request.error);
+      });
+    } catch (error) {
+      console.warn("No se pudo cargar el historial desde IndexedDB", error);
+      return null;
+    }
+  }
+
+  function guardarHistorialEnIndexedDB() {
+    if (typeof indexedDB === "undefined") return;
+    obtenerDB()
+      .then(db => {
+        const tx = db.transaction(DB_STORE, "readwrite");
+        const store = tx.objectStore(DB_STORE);
+        store.put(historialDatos, "datos");
+        return new Promise((resolve, reject) => {
+          tx.oncomplete = resolve;
+          tx.onerror = () => reject(tx.error);
+          tx.onabort = () => reject(tx.error);
+        });
+      })
+      .catch(error => {
+        console.warn("No se pudo guardar el historial en IndexedDB", error);
+      });
+  }
+
+  async function solicitarAlmacenamientoPersistente() {
+    if (!navigator.storage || typeof navigator.storage.persist !== "function") return;
+    try {
+      const yaConcedido = await navigator.storage.persisted();
+      if (!yaConcedido) {
+        await navigator.storage.persist();
+      }
+    } catch (error) {
+      console.warn("No se pudo solicitar almacenamiento persistente", error);
+    }
+  }
+
+  function descargarHistorialComoArchivo() {
+    try {
+      const payload = {
+        version: 1,
+        exportadoEn: new Date().toISOString(),
+        historial: historialDatos
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json"
+      });
+      const url = URL.createObjectURL(blob);
+      const enlace = document.createElement("a");
+      const fecha = new Date().toISOString().split("T")[0];
+      enlace.href = url;
+      enlace.download = `historial-calculadora-${fecha}.json`;
+      document.body.appendChild(enlace);
+      enlace.click();
+      document.body.removeChild(enlace);
+      URL.revokeObjectURL(url);
+      mostrarAlerta("Historial exportado", "Se descargó un respaldo en formato JSON.", "success");
+    } catch (error) {
+      console.error("No se pudo exportar el historial", error);
+      mostrarAlerta("Error", "Ocurrió un problema al generar el archivo.", "error");
+    }
+  }
+
+  async function preguntarModoImportacion() {
+    if (typeof Swal !== "undefined") {
+      const resultado = await Swal.fire({
+        title: "¿Cómo deseas importar?",
+        text: "Puedes combinar las listas con el historial actual o reemplazarlo completamente.",
+        icon: "question",
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonText: "Combinar",
+        denyButtonText: "Reemplazar",
+        cancelButtonText: "Cancelar",
+        confirmButtonColor: "#4caf50",
+        denyButtonColor: "#d33"
+      });
+      if (resultado.isConfirmed) return "merge";
+      if (resultado.isDenied) return "replace";
+      return null;
+    }
+
+    const confirmarReemplazo = confirm(
+      "Ya tienes listas guardadas. Aceptar para reemplazarlas con el archivo, Cancelar para combinarlas."
+    );
+    return confirmarReemplazo ? "replace" : "merge";
+  }
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") {
+      sincronizarHistorialPersistido();
+    }
+  });
+
+  window.addEventListener("pagehide", () => {
+    sincronizarHistorialPersistido();
+  });
 });

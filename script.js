@@ -37,24 +37,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   inicializarHistorial();
 
+  function actualizarPantalla(texto) {
+    pantalla.textContent = texto;
+    requestAnimationFrame(() => {
+      pantalla.scrollLeft = pantalla.scrollWidth;
+    });
+  }
+
   // ===== CALCULADORA =====
   botones.forEach(boton => {
     boton.addEventListener("click", () => {
       const valor = boton.textContent;
       if (["←", "SUP", "=", "LISTA"].includes(valor)) return;
       operacion += valor;
-      pantalla.textContent = operacion;
+      actualizarPantalla(operacion);
     });
   });
 
   borrar.addEventListener("click", () => {
     operacion = operacion.slice(0, -1);
-    pantalla.textContent = operacion;
+    actualizarPantalla(operacion);
   });
 
   sup.addEventListener("click", () => {
     operacion = "";
-    pantalla.textContent = "";
+    actualizarPantalla("");
   });
 
   igual.addEventListener("click", () => {
@@ -62,10 +69,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!operacion.trim()) return;
       preciosGuardados = parsearOperacion(operacion);
       const resultado = preciosGuardados.reduce((a, b) => a + b, 0);
-      pantalla.textContent = resultado.toFixed(2);
+      actualizarPantalla(resultado.toFixed(2));
       operacion = "";
     } catch {
-      pantalla.textContent = "Error";
+      actualizarPantalla("Error");
     }
   });
 

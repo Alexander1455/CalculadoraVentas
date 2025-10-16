@@ -60,6 +60,18 @@ h2 {
   justify-content: flex-end;
   padding: 0 15px;
   box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.25);
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+}
+
+#pantalla::-webkit-scrollbar {
+  height: 4px;
+}
+
+#pantalla::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.25);
+  border-radius: 999px;
 }
 
 /* ======== BOTONES CALCULADORA ======== */

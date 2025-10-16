@@ -44,6 +44,16 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+    function obtenerTerminoActual() {
+    const ultimoSeparador = operacion.lastIndexOf("+");
+    const termino = ultimoSeparador === -1 ? operacion : operacion.slice(ultimoSeparador + 1);
+    return termino.trim();
+  }
+
+  function terminoActualTienePunto() {
+    return obtenerTerminoActual().includes(".");
+  }
+
   // ===== CALCULADORA =====
   botones.forEach(boton => {
     boton.addEventListener("click", () => {

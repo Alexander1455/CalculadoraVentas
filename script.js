@@ -34,8 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const DB_VERSION = 1;
   const DB_STORE = "historial";
   let dbPromise = null;
-  let resultadoPendiente = false;
-  let expresionLimpiada = false;
+  let ultimoCalculo = null;
 
   inicializarHistorial();
 
@@ -76,19 +75,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (valor === "." && (terminoActualTienePunto() || terminaConPunto())) return;
       if (valor === "+" && (operacion.length === 0 || terminaConSigno())) return;
       operacion += valor;
-      resultadoPendiente = false;
-      expresionLimpiada = false;
+      ultimoCalculo = null;
       actualizarPantalla(operacion);
     });
   });
 
   borrar.addEventListener("click", () => {
     operacion = operacion.slice(0, -1);
-    resultadoPendiente = false;
     actualizarPantalla(operacion);
-    expresionLimpiada = operacion.length === 0;
-    if (expresionLimpiada) {
+    if (operacion.length === 0) {
       preciosGuardados = [];
+      ultimoCalculo = null;
     }
   });
 
@@ -96,8 +93,7 @@ document.addEventListener("DOMContentLoaded", () => {
     operacion = "";
     actualizarPantalla("");
     preciosGuardados = [];
-    resultadoPendiente = false;
-    expresionLimpiada = true;
+    ultimoCalculo = null;
   });
 
   igual.addEventListener("click", () => {
@@ -107,79 +103,77 @@ document.addEventListener("DOMContentLoaded", () => {
       const resultado = preciosGuardados.reduce((a, b) => a + b, 0);
       actualizarPantalla(resultado.toFixed(2));
       operacion = "";
-      resultadoPendiente = true;
-      expresionLimpiada = false;
+      ultimoCalculo = [...preciosGuardados];
     } catch {
       actualizarPantalla("Error");
-      resultadoPendiente = false;
-      expresionLimpiada = false;
+      preciosGuardados = [];
+      ultimoCalculo = null;
     }
   });
 
   // ===== ABRIR LISTA =====
-  listaBtn.addEventListener("click", () => {
+  listaBtn.addEventListener("click", async () => {
     const posibles = parsearOperacion(operacion);
+
     if (posibles.length > 0) {
-      preciosGuardados = posibles;
-      resultadoPendiente = true;
+      preciosGuardados = [...posibles];
+      ultimoCalculo = [...posibles];
+      operacion = "";
+      actualizarPantalla("");
+      await abrirListaCon(preciosGuardados);
+      return;
     }
-    abrirListaCon(preciosGuardados);
+
+    if (ultimoCalculo && ultimoCalculo.length > 0) {
+      preciosGuardados = [...ultimoCalculo];
+      await abrirListaCon(preciosGuardados);
+      return;
+    }
+
+    await abrirListaCon([]);
   });
 
   async function abrirListaCon(precios = []) {
-    if (preciosGuardados.length > 0 && precios.length === 0 && !resultadoPendiente) {
-      if (typeof Swal === "undefined") {
-        const confirmar = confirm("¿Deseas iniciar una nueva lista? Esto eliminará la lista anterior.");
-        if (!confirmar) return;
-      } else {
-        const resultado = await Swal.fire({
-          title: "¿Iniciar nueva lista?",
-          text: "Esto eliminará la lista anterior.",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#4CAF50",
-          cancelButtonColor: "#d33",
-          confirmButtonText: "Sí, nueva lista",
-          cancelButtonText: "Cancelar"
-        });
-        if (!resultado.isConfirmed) return;
+    if (precios.length === 0 && preciosGuardados.length > 0) {
+      const confirmar = await confirmarNuevaLista();
+      if (!confirmar) {
+        return;
       }
       preciosGuardados = [];
+      ultimoCalculo = null;
     }
 
     document.getElementById("calculadora").classList.add("oculto");
     historialDiv.classList.add("oculto");
     listaProductosDiv.classList.remove("oculto");
 
-    if (precios.length === 0 || expresionLimpiada) {
-      preciosGuardados = [];
-    }
+    preciosGuardados = [...precios];
+    ultimoCalculo = precios.length > 0 ? [...precios] : null;
 
     listaActualIndex = null;
     cuerpoLista.innerHTML = "";
     nombreListaInput.value = "";
 
-    if (preciosGuardados.length > 0) {
-      preciosGuardados.forEach(p => agregarFila("", p));
+    if (precios.length > 0) {
+      precios.forEach(p => agregarFila("", p));
     } else {
-      agregarFila("", 0);
+      agregarFila();
     }
     recalcularTotal();
-    resultadoPendiente = false;
-    expresionLimpiada = false;
   }
 
   // ===== AGREGAR FILA =====
-  btnAgregarFila.addEventListener("click", () => agregarFila("", 0));
+  btnAgregarFila.addEventListener("click", () => agregarFila());
 
-  function agregarFila(nombre = "", precio = 0) {
+  function agregarFila(nombre = "", precio = null) {
+    const nombreSeguro = typeof nombre === "string" ? nombre : "";
     const tr = document.createElement("tr");
 
     const tdNombre = document.createElement("td");
     const inNombre = document.createElement("input");
     inNombre.type = "text";
     inNombre.placeholder = "Producto";
-    inNombre.value = nombre;
+    inNombre.value = nombreSeguro;
     tdNombre.appendChild(inNombre);
 
     const tdPrecio = document.createElement("td");
@@ -188,8 +182,15 @@ document.addEventListener("DOMContentLoaded", () => {
     inPrecio.placeholder = "0.00";
     inPrecio.step = "0.01";
     inPrecio.min = "0";
-    inPrecio.value = Number.isFinite(precio) ? precio.toFixed(2) : "";
+    const precioSeguro = Number.isFinite(precio) ? precio : null;
+    const debeMostrarValor =
+      precioSeguro !== null && (precioSeguro !== 0 || nombreSeguro.trim().length > 0);
+    inPrecio.value = debeMostrarValor ? precioSeguro.toFixed(2) : "";
     inPrecio.addEventListener("input", recalcularTotal);
+    inPrecio.addEventListener("focus", () => {
+      if (!inPrecio.value) return;
+      inPrecio.select();
+    });
     tdPrecio.appendChild(inPrecio);
 
     const tdEliminar = document.createElement("td");
@@ -206,6 +207,7 @@ document.addEventListener("DOMContentLoaded", () => {
     tr.appendChild(tdPrecio);
     tr.appendChild(tdEliminar);
 
+    // ✅ Insertar correctamente dentro del tbody
     cuerpoLista.appendChild(tr);
     recalcularTotal();
   }
@@ -216,7 +218,12 @@ document.addEventListener("DOMContentLoaded", () => {
       .map(i => parseFloat(i.value))
       .filter(v => !isNaN(v));
     const total = precios.reduce((a, b) => a + b, 0);
-    totalValor.textContent = `S/ ${total.toFixed(2)}`;
+    const monto = totalValor.querySelector(".total-monto");
+    if (monto) {
+      monto.textContent = total.toFixed(2);
+    } else {
+      totalValor.textContent = `S/ ${total.toFixed(2)}`;
+    }
   }
 
   // ===== GUARDAR / IMPRIMIR / VOLVER =====
@@ -244,8 +251,7 @@ document.addEventListener("DOMContentLoaded", () => {
     sincronizarHistorialPersistido();
     mostrarAlerta("✅ Guardado", "Lista guardada correctamente.", "success");
     preciosGuardados = [];
-    resultadoPendiente = false;
-    expresionLimpiada = true;
+    ultimoCalculo = null;
   });
 
   imprimirListaBtn.addEventListener("click", () => {
@@ -375,8 +381,7 @@ document.addEventListener("DOMContentLoaded", () => {
     reg.items.forEach(it => agregarFila(it.nombre, it.precio));
     recalcularTotal();
     preciosGuardados = reg.items.map(it => it.precio);
-    resultadoPendiente = false;
-    expresionLimpiada = false;
+    ultimoCalculo = null;
   }
 
   // ===== UTIL =====
@@ -412,6 +417,23 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       Swal.fire(titulo, texto, icono);
     }
+  }
+
+  async function confirmarNuevaLista() {
+    if (typeof Swal !== "undefined") {
+      const resultado = await Swal.fire({
+        title: "¿Iniciar nueva lista?",
+        text: "Se perderán los productos cargados previamente.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "Sí, nueva lista",
+        cancelButtonText: "Cancelar",
+        confirmButtonColor: "#007acc"
+      });
+      return resultado.isConfirmed;
+    }
+
+    return confirm("¿Deseas iniciar una nueva lista? Esto eliminará la lista anterior.");
   }
 
   function cargarHistorialDesdeStorage() {

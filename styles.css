@@ -176,16 +176,18 @@ table {
 th {
   background-color: #007acc;
   color: #d4d4d4;
-  padding: 12px 10px;
-  border-radius: 10px 10px 0 0;
+  padding: 8px;
+  border: solid;
+  border-color: #252526;
+  border-radius: 15px 15px;
   font-weight: 600;
-  border: 1px solid #0e639c;
 }
 
 td {
   padding: 10px;
   border-bottom: 1px solid #2c2f34;
   vertical-align: middle;
+  
 }
 
 tbody tr:last-child td {
@@ -274,11 +276,13 @@ input[type="number"]:focus {
 }
 
 .total-valor {
-  display: inline-flex;
+  text-align: center;
   align-items: center;
   justify-content: center;
   gap: 8px;
   white-space: nowrap;
+  font-size: 1.05em;
+  font-weight: 600;
 }
 
 .total-moneda {
@@ -431,7 +435,6 @@ input[type="number"]:focus {
   #historial {
     width: 100%;
     max-width: 440px;
-    padding: 22px;
     border-radius: 18px;
   }
 
@@ -504,7 +507,6 @@ input[type="number"]:focus {
   #listaProductos,
   #historial {
     max-width: 600px;
-    padding: 32px;
   }
 
   #pantalla {

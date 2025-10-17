@@ -34,6 +34,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const DB_VERSION = 1;
   const DB_STORE = "historial";
   let dbPromise = null;
+  let resultadoPendiente = false;
+  let expresionLimpiada = false;
 
   inicializarHistorial();
 
@@ -74,18 +76,28 @@ document.addEventListener("DOMContentLoaded", () => {
       if (valor === "." && (terminoActualTienePunto() || terminaConPunto())) return;
       if (valor === "+" && (operacion.length === 0 || terminaConSigno())) return;
       operacion += valor;
+      resultadoPendiente = false;
+      expresionLimpiada = false;
       actualizarPantalla(operacion);
     });
   });
 
   borrar.addEventListener("click", () => {
     operacion = operacion.slice(0, -1);
+    resultadoPendiente = false;
     actualizarPantalla(operacion);
+    expresionLimpiada = operacion.length === 0;
+    if (expresionLimpiada) {
+      preciosGuardados = [];
+    }
   });
 
   sup.addEventListener("click", () => {
     operacion = "";
     actualizarPantalla("");
+    preciosGuardados = [];
+    resultadoPendiente = false;
+    expresionLimpiada = true;
   });
 
   igual.addEventListener("click", () => {
@@ -95,20 +107,27 @@ document.addEventListener("DOMContentLoaded", () => {
       const resultado = preciosGuardados.reduce((a, b) => a + b, 0);
       actualizarPantalla(resultado.toFixed(2));
       operacion = "";
+      resultadoPendiente = true;
+      expresionLimpiada = false;
     } catch {
       actualizarPantalla("Error");
+      resultadoPendiente = false;
+      expresionLimpiada = false;
     }
   });
 
   // ===== ABRIR LISTA =====
   listaBtn.addEventListener("click", () => {
     const posibles = parsearOperacion(operacion);
-    if (posibles.length > 0) preciosGuardados = posibles;
+    if (posibles.length > 0) {
+      preciosGuardados = posibles;
+      resultadoPendiente = true;
+    }
     abrirListaCon(preciosGuardados);
   });
 
   async function abrirListaCon(precios = []) {
-    if (preciosGuardados.length > 0 && precios.length === 0) {
+    if (preciosGuardados.length > 0 && precios.length === 0 && !resultadoPendiente) {
       if (typeof Swal === "undefined") {
         const confirmar = confirm("¿Deseas iniciar una nueva lista? Esto eliminará la lista anterior.");
         if (!confirmar) return;
@@ -132,16 +151,22 @@ document.addEventListener("DOMContentLoaded", () => {
     historialDiv.classList.add("oculto");
     listaProductosDiv.classList.remove("oculto");
 
+    if (precios.length === 0 || expresionLimpiada) {
+      preciosGuardados = [];
+    }
+
     listaActualIndex = null;
     cuerpoLista.innerHTML = "";
     nombreListaInput.value = "";
 
-    if (precios.length > 0) {
-      precios.forEach(p => agregarFila("", p));
+    if (preciosGuardados.length > 0) {
+      preciosGuardados.forEach(p => agregarFila("", p));
     } else {
       agregarFila("", 0);
     }
     recalcularTotal();
+    resultadoPendiente = false;
+    expresionLimpiada = false;
   }
 
   // ===== AGREGAR FILA =====
@@ -181,7 +206,6 @@ document.addEventListener("DOMContentLoaded", () => {
     tr.appendChild(tdPrecio);
     tr.appendChild(tdEliminar);
 
-    // ✅ Insertar correctamente dentro del tbody
     cuerpoLista.appendChild(tr);
     recalcularTotal();
   }
@@ -220,6 +244,8 @@ document.addEventListener("DOMContentLoaded", () => {
     sincronizarHistorialPersistido();
     mostrarAlerta("✅ Guardado", "Lista guardada correctamente.", "success");
     preciosGuardados = [];
+    resultadoPendiente = false;
+    expresionLimpiada = true;
   });
 
   imprimirListaBtn.addEventListener("click", () => {
@@ -348,6 +374,9 @@ document.addEventListener("DOMContentLoaded", () => {
     cuerpoLista.innerHTML = "";
     reg.items.forEach(it => agregarFila(it.nombre, it.precio));
     recalcularTotal();
+    preciosGuardados = reg.items.map(it => it.precio);
+    resultadoPendiente = false;
+    expresionLimpiada = false;
   }
 
   // ===== UTIL =====

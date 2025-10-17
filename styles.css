@@ -1,13 +1,14 @@
 /* ======== ESTILOS GENERALES ======== */
 body {
-  background-color: #fdf6e3;
+  background-color: #f9f7f3;
   font-family: "Poppins", sans-serif;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   min-height: 100vh;
   margin: 0;
-  color: #333;
+  color: #333333;
+  padding: 30px 16px;
 }
 
 #app {
@@ -15,7 +16,9 @@ body {
   padding: 25px;
   border-radius: 18px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-  width: 400px;
+  width: 100%;
+  max-width: 420px;
+  margin: 0 auto;
 }
 
 /* ======== CABECERAS ======== */
@@ -50,7 +53,7 @@ h2 {
 }
 
 #pantalla {
-  background-color: #dcdcdc;
+  background-color: #e0e0e0;
   border-radius: 10px;
   height: 55px;
   margin-bottom: 15px;
@@ -63,6 +66,7 @@ h2 {
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;
+  color: #333333;
 }
 
 #pantalla::-webkit-scrollbar {
@@ -82,25 +86,31 @@ h2 {
 }
 
 #botones button {
-  background-color: #fcb6b8;
+  background-color: #4caf50;
   border: none;
+  color: #ffffff;
   padding: 14px;
   border-radius: 10px;
   font-size: 1.1em;
   cursor: pointer;
-  box-shadow: 0 4px #c47c80;
+  box-shadow: 0 4px #388e3c;
   transition: all 0.15s;
   font-weight: 500;
 }
 
+#botones button:hover {
+  background-color: #43a047;
+}
+
 #botones button:active {
   transform: translateY(3px);
-  box-shadow: 0 1px #a65d61;
+  box-shadow: 0 1px #2e7d32;
 }
 
 /* ===================== LISTA DE PRODUCTOS ===================== */
 #listaProductos {
-  width: 420px;
+  width: 100%;
+  max-width: 420px;
   margin: 0 auto;
   text-align: center;
 }
@@ -167,17 +177,17 @@ input[type="number"] {
   border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
-  box-shadow: 0 3px 0 #3e8e41;
+  box-shadow: 0 3px 0 #388e3c;
   transition: all 0.15s;
 }
 
 .btn-agregar:hover {
-  background-color: #45a049;
+  background-color: #43a047;
 }
 
 .btn-agregar:active {
   transform: translateY(2px);
-  box-shadow: 0 1px 0 #2f6d32;
+  box-shadow: 0 1px 0 #2e7d32;
 }
 
 /* ======== BOTÓN ELIMINAR ======== */
@@ -245,30 +255,30 @@ input[type="number"] {
 
 .btn-guardar {
   background-color: #4caf50;
-  box-shadow: 0 4px 0 #3e8e41;
+  box-shadow: 0 4px 0 #388e3c;
 }
 .btn-guardar:hover {
-  background-color: #45a049;
+  background-color: #43a047;
 }
 
 .btn-imprimir {
-  background-color: #9c7b66;
-  box-shadow: 0 4px 0 #6f5445;
+  background-color: #795548;
+  box-shadow: 0 4px 0 #5d4037;
 }
 .btn-imprimir:hover {
-  background-color: #8b6e5c;
+  background-color: #6d4c41;
 }
 
 .btn-volver {
-  background-color: #5d4037;
-  box-shadow: 0 4px 0 #3e2c27;
+  background-color: #795548;
+  box-shadow: 0 4px 0 #5d4037;
 }
 .btn-volver:hover {
-  background-color: #4a322a;
+  background-color: #6d4c41;
 }
 
 .btn-secundario {
-  background-color: #1976d2;
+  background-color: #795548;
   border: none;
   padding: 10px 0;
   border-radius: 8px;
@@ -277,21 +287,22 @@ input[type="number"] {
   color: white;
   font-size: 0.95em;
   transition: all 0.15s;
-  box-shadow: 0 4px 0 #125da4;
+  box-shadow: 0 4px 0 #5d4037;
 }
 
 .btn-secundario:hover {
-  background-color: #1565c0;
+  background-color: #6d4c41;
 }
 
 .btn-secundario:active {
   transform: translateY(2px);
-  box-shadow: 0 1px 0 #0d3c73;
+  box-shadow: 0 1px 0 #4e342e;
 }
 
 /* ===================== HISTORIAL ===================== */
 #historial {
-  width: 400px;
+  width: 100%;
+  max-width: 420px;
   margin: 0 auto;
   text-align: center;
 }
@@ -312,18 +323,13 @@ input[type="number"] {
 }
 
 #historial li button {
-  background-color: #4caf50;
   border: none;
-  color: white;
+  color: #ffffff;
   padding: 6px 10px;
   border-radius: 6px;
   cursor: pointer;
   font-size: 0.9em;
   transition: background-color 0.3s;
-}
-
-#historial li button:hover {
-  background-color: #45a049;
 }
 
 #historial li.historial-vacio {
@@ -332,17 +338,19 @@ input[type="number"] {
 /* ======== MODO RESPONSIVE (4 columnas siempre) ======== */
 @media (max-width: 600px) {
   body {
-    background-color: #fdf6e3;
-    padding: 10px;
+    background-color: #f9f7f3;
+    padding: 24px 12px;
+    align-items: flex-start;
   }
 
   #app,
   #listaProductos,
   #historial {
     width: 100%;
-    max-width: 100%;
-    padding: 15px;
+    max-width: 420px;
+    padding: 18px;
     border-radius: 14px;
+    margin: 0 auto;
   }
 
   /* --- Pantalla de la calculadora --- */

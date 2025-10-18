@@ -16,6 +16,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const guardarListaBtn = document.getElementById("guardarLista");
   const imprimirListaBtn = document.getElementById("imprimirLista");
   const volverCalcBtn = document.getElementById("volverCalc");
+  const metaLista = document.getElementById("metaLista");
+  const fechaListaLabel = document.getElementById("fechaLista");
 
   const historialDiv = document.getElementById("historial");
   const listaHistorial = document.getElementById("listaHistorial");
@@ -35,8 +37,40 @@ document.addEventListener("DOMContentLoaded", () => {
   const DB_STORE = "historial";
   let dbPromise = null;
   let ultimoCalculo = null;
+  const formateadorFecha = new Intl.DateTimeFormat("es-PE", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  });
 
   inicializarHistorial();
+
+  function formatearFechaHora(isoString) {
+    if (!isoString) return "Sin fecha";
+    const fecha = new Date(isoString);
+    if (Number.isNaN(fecha.getTime())) return "Sin fecha";
+    return formateadorFecha.format(fecha);
+  }
+
+  function asegurarFechaIso(valor) {
+    if (!valor) return new Date().toISOString();
+    const fecha = new Date(valor);
+    if (Number.isNaN(fecha.getTime())) return new Date().toISOString();
+    return fecha.toISOString();
+  }
+
+  function actualizarMetaLista(fechaIso) {
+    if (!metaLista || !fechaListaLabel) return;
+    if (!fechaIso) {
+      fechaListaLabel.textContent = "";
+      fechaListaLabel.dateTime = "";
+      metaLista.classList.add("oculto");
+      return;
+    }
+    const isoSeguro = asegurarFechaIso(fechaIso);
+    fechaListaLabel.textContent = formatearFechaHora(isoSeguro);
+    fechaListaLabel.dateTime = isoSeguro;
+    metaLista.classList.remove("oculto");
+  }
 
   function actualizarPantalla(texto) {
     pantalla.textContent = texto;
@@ -149,6 +183,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     preciosGuardados = [...precios];
     ultimoCalculo = precios.length > 0 ? [...precios] : null;
+    actualizarMetaLista(null);
 
     listaActualIndex = null;
     cuerpoLista.innerHTML = "";
@@ -237,7 +272,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const registro = {
       nombre: (nombreListaInput.value || "Sin nombre").trim(),
       total: filas.total,
-      items: filas.items
+      items: filas.items,
+      fecha: new Date().toISOString()
     };
 
     if (listaActualIndex === null) {
@@ -252,6 +288,7 @@ document.addEventListener("DOMContentLoaded", () => {
     mostrarAlerta("✅ Guardado", "Lista guardada correctamente.", "success");
     preciosGuardados = [];
     ultimoCalculo = null;
+    actualizarMetaLista(registro.fecha);
   });
 
   imprimirListaBtn.addEventListener("click", () => {
@@ -260,12 +297,20 @@ document.addEventListener("DOMContentLoaded", () => {
       return mostrarAlerta("Sin productos", "Agrega productos antes de imprimir", "info");
 
     const nombre = (nombreListaInput.value || "Lista sin nombre").trim();
+    const registroActual = listaActualIndex !== null ? historialDatos[listaActualIndex] : null;
+    const fechaIso = asegurarFechaIso(registroActual?.fecha);
+    if (registroActual && registroActual.fecha !== fechaIso) {
+      registroActual.fecha = fechaIso;
+      sincronizarHistorialPersistido();
+    }
+    const fechaTexto = formatearFechaHora(fechaIso);
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
     doc.text(nombre, 10, 10);
-    doc.text("Lista de productos", 10, 20);
+    doc.text(`Fecha: ${fechaTexto}`, 10, 18);
+    doc.text("Lista de productos", 10, 26);
 
-    let y = 30;
+    let y = 36;
     filas.items.forEach(it => {
       doc.text(`${it.nombre} - S/ ${it.precio.toFixed(2)}`, 10, y);
       y += 10;
@@ -357,15 +402,44 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    let fechasNormalizadas = false;
+
     historialDatos.forEach((reg, idx) => {
       const li = document.createElement("li");
-      li.innerHTML = `<div><strong>${reg.nombre}</strong><br/>Total: S/ ${reg.total.toFixed(2)}</div>`;
+      const info = document.createElement("div");
+
+      const nombre = document.createElement("strong");
+      nombre.textContent = reg.nombre;
+      info.appendChild(nombre);
+
+      const fechaIso = asegurarFechaIso(reg.fecha);
+      if (reg.fecha !== fechaIso) {
+        reg.fecha = fechaIso;
+        fechasNormalizadas = true;
+      }
+      const fecha = document.createElement("time");
+      fecha.className = "historial-fecha";
+      fecha.dateTime = fechaIso;
+      fecha.textContent = `Guardado: ${formatearFechaHora(fechaIso)}`;
+      info.appendChild(fecha);
+
+      const total = document.createElement("span");
+      total.className = "historial-total";
+      total.textContent = `Total: S/ ${reg.total.toFixed(2)}`;
+      info.appendChild(total);
+
+      li.appendChild(info);
+
       const ver = document.createElement("button");
       ver.textContent = "VER";
       ver.addEventListener("click", () => abrirListaGuardada(idx));
       li.appendChild(ver);
       listaHistorial.appendChild(li);
     });
+
+    if (fechasNormalizadas) {
+      sincronizarHistorialPersistido();
+    }
   }
 
   function abrirListaGuardada(index) {
@@ -382,6 +456,7 @@ document.addEventListener("DOMContentLoaded", () => {
     recalcularTotal();
     preciosGuardados = reg.items.map(it => it.precio);
     ultimoCalculo = null;
+    actualizarMetaLista(reg.fecha);
   }
 
   // ===== UTIL =====
@@ -470,7 +545,9 @@ document.addEventListener("DOMContentLoaded", () => {
       : [];
     const total = items.reduce((acum, item) => acum + item.precio, 0);
 
-    return { nombre, items, total };
+    const fecha = asegurarFechaIso(registro?.fecha);
+
+    return { nombre, items, total, fecha };
   }
 
   function normalizarHistorial(raw) {
@@ -511,6 +588,9 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
     renderHistorial();
+    if (historialDatos.length > 0) {
+      sincronizarHistorialPersistido();
+    }
     solicitarAlmacenamientoPersistente();
   }
 
